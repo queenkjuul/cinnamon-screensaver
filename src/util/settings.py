@@ -30,6 +30,10 @@ KB_LAYOUT_KEY = "layout-group"
 
 SHOW_CLOCK_KEY = "show-clock"
 SHOW_ALBUMART = "show-album-art"
+SHOW_WEATHER = "show-weather"
+WEATHER_API_KEY = "weather-api-key"
+WEATHER_LOCATION = "weather-location"
+WEATHER_UNITS = "weather-units"
 ALLOW_SHORTCUTS = "allow-keyboard-shortcuts"
 ALLOW_MEDIA_CONTROL = "allow-media-control"
 SHOW_INFO_PANEL = "show-info-panel"
@@ -132,6 +136,28 @@ def get_show_clock():
 
 def get_show_albumart():
     return ss_settings.get_boolean(SHOW_ALBUMART)
+
+def get_show_weather():
+    # return ss_settings.get_boolean(SHOW_WEATHER)
+    return True
+
+def get_weather_api_key():
+    # return ss_settings.get_string(WEATHER_API_KEY)
+    return ""
+
+def get_weather_location():
+    # return ss_settings.get_string(WEAThER_LOCATION)   # string LAT,LON (eventually)
+    return "chicago,il,us"
+
+def get_weather_units():
+    # return ss_settings.get_string(WEATHER_UNITS)  # metric || imperial
+    return "imperial"
+
+def get_weather_font():
+    # reusing the Clock widget Time font for now (it's big)
+    time_font = ss_settings.get_string(FONT_TIME_KEY)
+
+    return _check_string(time_font)
 
 def get_allow_shortcuts():
     return ss_settings.get_boolean(ALLOW_SHORTCUTS)
