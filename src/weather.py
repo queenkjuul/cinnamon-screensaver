@@ -1,17 +1,15 @@
 #!/usr/bin/python3
-import json
+from gi.repository import GLib, Gtk, Pango, Gio, GdkPixbuf
 
-from gi.repository import CinnamonDesktop, GLib, Gtk, Gio, Pango
-
-from util import utils, trackers, settings
+from util import settings
+from util.openweathermap import OWMWeatherProvider
+from util.location import LocationData
 from baseWindow import BaseWindow
 from floating import Floating
-import requests
 
 MAX_WIDTH = 320
 MAX_WIDTH_LOW_RES = 200
 
-WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 class WeatherWidget(Floating, BaseWindow):
     """
@@ -24,6 +22,7 @@ class WeatherWidget(Floating, BaseWindow):
     using a timer which randomizes its halign and valign properties
     as well as its current monitor.
     """
+
     def __init__(self, away_message=None, initial_monitor=0, low_res=False):
         super(WeatherWidget, self).__init__(initial_monitor)
         self.get_style_context().add_class("weather")
@@ -38,52 +37,83 @@ class WeatherWidget(Floating, BaseWindow):
 
         self.away_message = away_message
 
+        big_box = Gtk.Box(Gtk.Orientation.HORIZONTAL)
+        self.add(big_box)
+        big_box.show()
+        self.icon_size = 128
+
+        self.condition_icon = Gtk.Image()
+        self.condition_icon.set_size_request(self.icon_size, self.icon_size)
+        big_box.pack_start(self.condition_icon, False, False, 6)
+        self.condition_icon.show()
+
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.add(box)
+        big_box.pack_start(box, True, False, 6)
         box.show()
 
-        self.label = Gtk.Label()
-        self.label.show()
-        self.label.set_line_wrap(True)
-        self.label.set_alignment(0.5, 0.5)
+        self.temp_label = Gtk.Label()
+        self.temp_label.show()
+        self.temp_label.set_line_wrap(True)
+        self.temp_label.set_alignment(0.5, 0.5)
 
-        box.pack_start(self.label, True, False, 6)
+        box.pack_start(self.temp_label, True, False, 6)
 
-        self.msg_label = Gtk.Label()
-        self.msg_label.show()
-        self.msg_label.set_line_wrap(True)
-        self.msg_label.set_alignment(0.5, 0.5)
+        self.desc_label = Gtk.Label()
+        self.desc_label.show()
+        self.desc_label.set_line_wrap(True)
+        self.desc_label.set_alignment(0.5, 0.5)
 
         if self.low_res:
-            self.msg_label.set_max_width_chars(50)
+            self.desc_label.set_max_width_chars(50)
         else:
-            self.msg_label.set_max_width_chars(80)
+            self.desc_label.set_max_width_chars(80)
 
-        box.pack_start(self.msg_label, True, True, 6)
+        box.pack_start(self.desc_label, True, True, 6)
+
+        self.location = self.get_location()
+        # TODO: get from settings once other providers are available
+        self.weather_provider = OWMWeatherProvider()
 
         self.update_weather()
 
-    def update_weather(self):
-        default_message = GLib.markup_escape_text (settings.get_default_away_message(), -1)
-        font_message = Pango.FontDescription.from_string(settings.get_message_font())
-        font_weather = Pango.FontDescription.from_string(settings.get_weather_font())
+    def get_location(self):
+        # TODO: IP geolocation
+        loc_string = settings.get_weather_location()
+        lat = float(loc_string.split(",")[0])
+        lon = float(loc_string.split(",")[1])
+        return LocationData(lat, lon)
 
-        response = requests.get(WEATHER_URL,
-                                { "q": settings.get_weather_location(),
-                                  "units": settings.get_weather_units(),
-                                  "appid": settings.get_weather_api_key()})
-        data = response.json()
-        default_message = data["weather"][0]["main"] + " in " + data["name"]
+    def update_weather(self):
+        default_message = GLib.markup_escape_text(
+            settings.get_default_away_message(), -1)
+        message_font = Pango.FontDescription.from_string(
+            settings.get_message_font())
+        weather_font = Pango.FontDescription.from_string(
+            settings.get_weather_font())
 
         if self.low_res:
-            msg_size = font_message.get_size() * .66
-            font_message.set_size(int(msg_size))
+            msg_size = message_font.get_size() * .66
+            message_font.set_size(int(msg_size))
+
+        weather_data = self.weather_provider.GetWeather(self.location)
+
+        # commented out proper code, but we're cheating by pulling imperial directly for now
+        # temp_string = weather_data.temp_f(
+        # ) if settings.get_weather_units == "imperial" else weather_data.temp_c()
+        temp_string = str(round(weather_data.temperature))
+        default_message = weather_data.condition.main + \
+            " in " + weather_data.location.city
 
         markup = '<b><span font_desc=\"%s\" foreground=\"#CCCCCC\">%s</span></b>\n ' %\
-                     (font_message.to_string(), default_message)
+            (message_font.to_string(), default_message)
 
-        self.label.set_markup('<span font_desc=\"%s\">%s°</span>' % (font_weather.to_string(), data['main']['temp']))
-        self.msg_label.set_markup(markup)
+        self.temp_label.set_markup('<span font_desc=\"%s\">%s°</span>' %
+                                   (weather_font.to_string(), temp_string))
+        self.desc_label.set_markup(markup)
+
+        self.condition_icon.set_from_icon_name(
+            weather_data.condition.icons[0], Gtk.IconSize.DIALOG)
+        self.condition_icon.set_pixel_size(self.icon_size)
 
     def set_message(self, msg=""):
         self.away_message = msg
@@ -91,5 +121,4 @@ class WeatherWidget(Floating, BaseWindow):
 
     @staticmethod
     def on_destroy(data=None):
-        # placeholder
-        print("shut down weather widget: " + data)
+        pass
