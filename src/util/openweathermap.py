@@ -60,7 +60,6 @@ class OWMWeatherProvider(WeatherProvider):
         # actual object structure: https://github.com/linuxmint/cinnamon-spices-applets/weather@mockturtl/src/3_8/providers/openweathermap/payload/weather.ts
         data = json.loads(
             response.text, object_hook=lambda d: SimpleNamespace(**d))
-        print(data.name)
         return self.owm_data_to_weather_data(data)
 
     @staticmethod

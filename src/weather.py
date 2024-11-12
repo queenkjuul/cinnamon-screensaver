@@ -7,8 +7,7 @@ from util.location import LocationData
 from baseWindow import BaseWindow
 from floating import Floating
 
-MAX_WIDTH = 320
-MAX_WIDTH_LOW_RES = 200
+ICON_SIZE = 128  # probably works OK on most screens
 
 
 class WeatherWidget(Floating, BaseWindow):
@@ -37,16 +36,19 @@ class WeatherWidget(Floating, BaseWindow):
 
         self.away_message = away_message
 
+        # overall container
         big_box = Gtk.Box(Gtk.Orientation.HORIZONTAL)
         self.add(big_box)
         big_box.show()
-        self.icon_size = 128
+        self.icon_size = ICON_SIZE
 
+        # icon
         self.condition_icon = Gtk.Image()
         self.condition_icon.set_size_request(self.icon_size, self.icon_size)
         big_box.pack_start(self.condition_icon, False, False, 6)
         self.condition_icon.show()
 
+        # temp + condition
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         big_box.pack_start(box, True, False, 6)
         box.show()
