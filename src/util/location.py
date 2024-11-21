@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod, abstractstaticmethod
 from dataclasses import dataclass
-from typing import NamedTuple, Optional
+from typing import Optional
 
 @dataclass
 class LocationData:
@@ -9,3 +10,8 @@ class LocationData:
     country: Optional[str] = None
     timeZone: Optional[str] = None
     entryText: Optional[str] = None
+
+class LocationProvider(ABC):
+    @abstractmethod
+    def GetLocation(self) -> LocationData:
+        pass

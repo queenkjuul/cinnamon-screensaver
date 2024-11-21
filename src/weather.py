@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 from gi.repository import GLib, Gtk, Pango, Gio, GdkPixbuf
 
+from util import trackers
 from util import settings
 from util.openweathermap import OWMWeatherProvider
+from util.geojs import GeoJSLocationProvider
 from util.location import LocationData
 from baseWindow import BaseWindow
 from floating import Floating
@@ -22,19 +24,16 @@ class WeatherWidget(Floating, BaseWindow):
     as well as its current monitor.
     """
 
-    def __init__(self, away_message=None, initial_monitor=0, low_res=False):
+    def __init__(self, initial_monitor=0, low_res=False):
         super(WeatherWidget, self).__init__(initial_monitor)
         self.get_style_context().add_class("weather")
         self.set_halign(Gtk.Align.START)
-
         self.set_property("margin", 6)
 
         self.low_res = low_res
 
         if not settings.get_show_weather():
             return
-
-        self.away_message = away_message
 
         # overall container
         big_box = Gtk.Box(Gtk.Orientation.HORIZONTAL)
@@ -72,22 +71,24 @@ class WeatherWidget(Floating, BaseWindow):
 
         box.pack_start(self.desc_label, True, True, 6)
 
+        # TODO: get from settings once other providers are available
+        self.location_provider = GeoJSLocationProvider()
         self.location = self.get_location()
         # TODO: get from settings once other providers are available
         self.weather_provider = OWMWeatherProvider()
-
         self.update_weather()
+        # 10 minutes between updates on OpenWeatherMap, 10s buffer to ensure no overlap
+        trackers.timer_tracker_get().start_seconds("weather", 610, self.update_weather)
 
     def get_location(self):
-        # TODO: IP geolocation
         loc_string = settings.get_weather_location()
+        if loc_string == "":
+            return self.location_provider.GetLocation()
         lat = float(loc_string.split(",")[0])
         lon = float(loc_string.split(",")[1])
         return LocationData(lat, lon)
 
     def update_weather(self):
-        default_message = GLib.markup_escape_text(
-            settings.get_default_away_message(), -1)
         message_font = Pango.FontDescription.from_string(
             settings.get_message_font())
         weather_font = Pango.FontDescription.from_string(
@@ -99,10 +100,8 @@ class WeatherWidget(Floating, BaseWindow):
 
         weather_data = self.weather_provider.GetWeather(self.location)
 
-        # commented out proper code, but we're cheating by pulling imperial directly for now
-        # temp_string = weather_data.temp_f(
-        # ) if settings.get_weather_units == "imperial" else weather_data.temp_c()
-        temp_string = str(round(weather_data.temperature))
+        temp = weather_data.temp_f() if settings.get_weather_units == "imperial" else weather_data.temp_c()
+        temp_string = str(round(temp))
         default_message = weather_data.condition.main + \
             " in " + weather_data.location.city
 
@@ -117,10 +116,6 @@ class WeatherWidget(Floating, BaseWindow):
             weather_data.condition.icons[0], Gtk.IconSize.DIALOG)
         self.condition_icon.set_pixel_size(self.icon_size)
 
-    def set_message(self, msg=""):
-        self.away_message = msg
-        self.update_weather()
-
     @staticmethod
     def on_destroy(data=None):
-        pass
+        trackers.timer_tracker_get().cancel("weather")

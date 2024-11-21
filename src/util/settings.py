@@ -160,26 +160,22 @@ def get_show_albumart():
 
 
 def get_show_weather():
-    # return ss_settings.get_boolean(SHOW_WEATHER)
-    return True
-
-
-def get_weather_api_key():
-    # return ss_settings.get_string(WEATHER_API_KEY)
-    # this is the OpenWeatherMap API key used by linux-mint/cinnamon-spices-applets/weather@mockturtl
-    # presumably belongs to the org?
-    return "1c73f8259a86c6fd43c7163b543c8640"
+    return ss_settings.get_boolean(SHOW_WEATHER)
+    # return True
 
 
 def get_weather_location():
-    # location_string = ss_settings.get_string(WEATHER_LOCATION)   # string LAT,LON (eventually)
-    # return _check_string(location_string)
-    return "41.85,-87.65"  # chicago,il,us
+    # ss_settings crashes on missing keys, need to update cinnamon-settings
+    # location_string = ""
+    location_string = ss_settings.get_string(WEATHER_LOCATION)   # string LAT,LON
+    return _check_string(location_string)
 
 
 def get_weather_units():
-    # return ss_settings.get_string(WEATHER_UNITS)  # metric || imperial
-    return "imperial"
+    # ss_settings crashes on missing keys, need to update cinnamon-settings
+    # units_string = ""
+    units_string = ss_settings.get_string(WEATHER_UNITS)  # metric || imperial
+    return units_string if _check_string(units_string) != "" else "metric"
 
 
 def get_weather_font():

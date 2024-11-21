@@ -8,6 +8,9 @@ from util import settings
 from util.weather_types import APIUniqueField, BuiltinIcons, CustomIcons, Condition, Location, LocationData, WeatherData, WeatherProvider, Wind
 
 OWM_URL = "https://api.openweathermap.org/data/2.5/weather"
+# this is the OpenWeatherMap API key used by linux-mint/cinnamon-spices-applets/weather@mockturtl
+# presumably belongs to the org?
+OWM_API_KEY = "1c73f8259a86c6fd43c7163b543c8640"
 OWM_SUPPORTED_LANGS = [
     "af", "al", "ar", "az", "bg", "ca", "cz", "da", "de", "el", "en", "eu", "fa", "fi",
     "fr", "gl", "he", "hi", "hr", "hu", "id", "it", "ja", "kr", "la", "lt", "mk", "no", "nl", "pl",
@@ -53,8 +56,8 @@ class OWMWeatherProvider(WeatherProvider):
                                 {
                                     "lat": loc.lat,
                                     "lon": loc.lon,
-                                    "units": self.units,
-                                    "appid": settings.get_weather_api_key(),
+                                    "units": "standard",
+                                    "appid": OWM_API_KEY,
                                     "lang": lang})
 
         # actual object structure: https://github.com/linuxmint/cinnamon-spices-applets/weather@mockturtl/src/3_8/providers/openweathermap/payload/weather.ts
@@ -120,7 +123,8 @@ class OWMWeatherProvider(WeatherProvider):
             ))
         ))
 
-    def owm_icon_to_builtin_icons(self, icon) -> list[BuiltinIcons]:
+    @staticmethod
+    def owm_icon_to_builtin_icons(icon) -> list[BuiltinIcons]:
         # https://openweathermap.org/weather-conditions
         # fallback icons are: weather-clear-night
         # weather-clear weather-few-clouds-night weather-few-clouds

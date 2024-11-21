@@ -3,6 +3,7 @@ app_py = [
   'eventHandler.py',
   'fader.py',
   'focusNavigator.py',
+  'geojs.py',
   'keybindings.py',
   'location.py',
   'openweathermap.py',
