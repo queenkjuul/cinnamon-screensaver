@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod, abstractstaticmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional
+
 
 @dataclass
 class LocationData:
@@ -10,6 +11,7 @@ class LocationData:
     country: Optional[str] = None
     timeZone: Optional[str] = None
     entryText: Optional[str] = None
+
 
 class LocationProvider(ABC):
     @abstractmethod

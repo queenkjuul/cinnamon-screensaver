@@ -1,13 +1,12 @@
 #!/usr/bin/python3
-from gi.repository import GLib, Gtk, Pango, Gio, GdkPixbuf
+from gi.repository import Gtk, Pango
 
-from util import trackers
-from util import settings
-from util.openweathermap import OWMWeatherProvider
-from util.geojs import GeoJSLocationProvider
-from util.location import LocationData
 from baseWindow import BaseWindow
 from floating import Floating
+from util import settings, trackers
+from util.geojs import GeoJSLocationProvider
+from util.location import LocationData
+from util.openweathermap import OWMWeatherProvider
 
 ICON_SIZE = 128  # probably works OK on most screens
 
@@ -27,7 +26,9 @@ class WeatherWidget(Floating, BaseWindow):
     def __init__(self, initial_monitor=0, low_res=False):
         super(WeatherWidget, self).__init__(initial_monitor)
         self.get_style_context().add_class("weather")
-        self.set_halign(Gtk.Align.START)
+        # trying to find a spot that won't overlap with clock or albumArt on init
+        self.set_halign(Gtk.Align.CENTER)
+        self.set_valign(Gtk.Align.END)
         self.set_property("margin", 6)
 
         self.low_res = low_res
@@ -73,47 +74,54 @@ class WeatherWidget(Floating, BaseWindow):
 
         # TODO: get from settings once other providers are available
         self.location_provider = GeoJSLocationProvider()
-        self.location = self.get_location()
-        # TODO: get from settings once other providers are available
         self.weather_provider = OWMWeatherProvider()
+
+        self.location = self.get_location()
         self.update_weather()
-        # 10 minutes between updates on OpenWeatherMap, 10s buffer to ensure no overlap
-        trackers.timer_tracker_get().start_seconds("weather", 610, self.update_weather)
+
+        trackers.timer_tracker_get().start_seconds("weather", 600, self.update_weather)
 
     def get_location(self):
         loc_string = settings.get_weather_location()
-        if loc_string == "":
+        if loc_string == "" or "," not in loc_string:
             return self.location_provider.GetLocation()
         lat = float(loc_string.split(",")[0])
         lon = float(loc_string.split(",")[1])
         return LocationData(lat, lon)
 
     def update_weather(self):
-        message_font = Pango.FontDescription.from_string(
-            settings.get_message_font())
-        weather_font = Pango.FontDescription.from_string(
-            settings.get_weather_font())
+        message_font = Pango.FontDescription.from_string(settings.get_message_font())
+        weather_font = Pango.FontDescription.from_string(settings.get_weather_font())
 
         if self.low_res:
-            msg_size = message_font.get_size() * .66
+            msg_size = message_font.get_size() * 0.66
             message_font.set_size(int(msg_size))
 
         weather_data = self.weather_provider.GetWeather(self.location)
 
-        temp = weather_data.temp_f() if settings.get_weather_units == "imperial" else weather_data.temp_c()
+        temp = (
+            weather_data.temp_f()
+            if settings.get_weather_units() == "imperial"
+            else weather_data.temp_c()
+        )
         temp_string = str(round(temp))
-        default_message = weather_data.condition.main + \
-            " in " + weather_data.location.city
+        default_message = (
+            weather_data.condition.main + " in " + weather_data.location.city
+        )
 
-        markup = '<b><span font_desc=\"%s\" foreground=\"#CCCCCC\">%s</span></b>\n ' %\
-            (message_font.to_string(), default_message)
+        markup = '<b><span font_desc="%s" foreground="#CCCCCC">%s</span></b>\n ' % (
+            message_font.to_string(),
+            default_message,
+        )
 
-        self.temp_label.set_markup('<span font_desc=\"%s\">%s°</span>' %
-                                   (weather_font.to_string(), temp_string))
+        self.temp_label.set_markup(
+            '<span font_desc="%s">%s°</span>' % (weather_font.to_string(), temp_string)
+        )
         self.desc_label.set_markup(markup)
 
         self.condition_icon.set_from_icon_name(
-            weather_data.condition.icons[0], Gtk.IconSize.DIALOG)
+            weather_data.condition.icons[0], Gtk.IconSize.DIALOG
+        )
         self.condition_icon.set_pixel_size(self.icon_size)
 
     @staticmethod

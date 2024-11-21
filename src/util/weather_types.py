@@ -3,13 +3,14 @@
 # we don't use much of the data, but intending for easy porting of sources + customizations going forward
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal, NamedTuple, Optional
+from typing import Literal, Optional
+
 from util.location import LocationData
 from util.weather import k_to_c, k_to_f
 
-
-type PrecipitationTypes = Literal["rain",
-                                  "snow", "none", "ice pellets", "freezing rain"]
+type PrecipitationTypes = Literal[
+    "rain", "snow", "none", "ice pellets", "freezing rain"
+]
 type BuiltinIcons = Literal[
     "weather-clear",
     "weather-clear-night",
@@ -40,7 +41,8 @@ type BuiltinIcons = Literal[
     "weather-windy",
     "weather-breeze",
     "weather-clouds-night",
-    "weather-severe-alert"]
+    "weather-severe-alert",
+]
 type CustomIcons = Literal[None]  # TODO
 
 
@@ -81,7 +83,7 @@ class Condition:
     main: str
     description: str
     icons: Optional[list[BuiltinIcons]] = None
-    customIcon: Optional[CustomIcons] = None    # TODO
+    customIcon: Optional[CustomIcons] = None  # TODO
 
 
 class ForecastData:
@@ -125,8 +127,7 @@ class ImmediatePrecipitation:
     end: int
 
 
-type AlertSeverity = Literal["minor",
-                             "moderate", "severe", "extreme", "unknown"]
+type AlertSeverity = Literal["minor", "moderate", "severe", "extreme", "unknown"]
 
 
 @dataclass
@@ -176,6 +177,7 @@ class WeatherProvider(ABC):
     WeatherProvider tries to emulate the interface specified in cinnamon-spices-applets/weather@mockturtl
     such that other providers could be easily ported here in the future
     """
+
     needsApiKey: bool
     prettyName: str
     name: Literal["OpenWeatherMap_Open"]  # expand in the future

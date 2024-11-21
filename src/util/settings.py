@@ -31,7 +31,6 @@ KB_LAYOUT_KEY = "layout-group"
 SHOW_CLOCK_KEY = "show-clock"
 SHOW_ALBUMART = "show-album-art"
 SHOW_WEATHER = "show-weather"
-WEATHER_API_KEY = "weather-api-key"
 WEATHER_LOCATION = "weather-location"
 WEATHER_UNITS = "weather-units"
 ALLOW_SHORTCUTS = "allow-keyboard-shortcuts"
@@ -51,8 +50,7 @@ OSK_TYPE = "keyboard-type"
 OSK_SIZE = "keyboard-size"
 OSK_ACTIVATION = "activation-mode"
 
-a11y_settings = Gio.Settings(
-    schema_id="org.cinnamon.desktop.a11y.applications")
+a11y_settings = Gio.Settings(schema_id="org.cinnamon.desktop.a11y.applications")
 OSK_A11Y_ENABLED = "screen-keyboard-enabled"
 
 # Every setting has a getter (and setter, rarely).  This is mainly for
@@ -161,21 +159,17 @@ def get_show_albumart():
 
 def get_show_weather():
     return ss_settings.get_boolean(SHOW_WEATHER)
-    # return True
 
 
 def get_weather_location():
-    # ss_settings crashes on missing keys, need to update cinnamon-settings
-    # location_string = ""
-    location_string = ss_settings.get_string(WEATHER_LOCATION)   # string LAT,LON
+    location_string = ss_settings.get_string(WEATHER_LOCATION)  # string LAT,LON
     return _check_string(location_string)
 
 
 def get_weather_units():
-    # ss_settings crashes on missing keys, need to update cinnamon-settings
-    # units_string = ""
-    units_string = ss_settings.get_string(WEATHER_UNITS)  # metric || imperial
-    return units_string if _check_string(units_string) != "" else "metric"
+    units = ["metric", "imperial"]
+    units_string = _check_string(ss_settings.get_string(WEATHER_UNITS))
+    return units_string if units_string in units else "metric"
 
 
 def get_weather_font():
@@ -206,4 +200,7 @@ def get_osk_type():
 
 
 def get_osk_a11y_active():
-    return a11y_settings.get_boolean(OSK_A11Y_ENABLED) and osk_settings.get_string(OSK_ACTIVATION) == 'accessible'
+    return (
+        a11y_settings.get_boolean(OSK_A11Y_ENABLED)
+        and osk_settings.get_string(OSK_ACTIVATION) == "accessible"
+    )
